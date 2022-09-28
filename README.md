@@ -1,3 +1,5 @@
+## Develop
+
 development test:
 
 ```sh
@@ -18,3 +20,7 @@ docker run -it --rm -p 127.0.0.1:8080:80/tcp --name api test-api
 ```
 AIRTABLE_API_KEY=keyBlablabla
 ```
+
+## Deploy
+
+https://github.com/fastup-kit/deploy-scripts
