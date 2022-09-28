@@ -1,0 +1,17 @@
+version: "3.9"
+services:
+    api-mera:
+        image: localhost:5000/project/api
+        deploy:
+            restart_policy:
+                condition: on-failure
+            resources:
+                limits:
+                    memory: 128M
+                reservations:
+                    memory: 128M
+        networks:
+            - mera
+networks:
+    mera:
+        name: mera

@@ -1,0 +1,46 @@
+name: Continuous Deployment Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_ed25519
+          known_hosts: ${{ secrets.KNOW_HOSTS }}
+
+      - name: Set insecure registry
+        run: |
+          echo "{ \"insecure-registries\": [\"${{ secrets.HOST }}:5000\"] }" | sudo tee /etc/docker/daemon.json
+          sudo service docker restart
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.HOST }}:5000
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN }}
+
+      - name: Create .env file
+        run: echo AIRTABLE_KEY=${{ secrets.AIRTABLE_KEY }} > .env
+
+      - name: Build docker image
+        run: docker build -t ${{ secrets.HOST }}:5000/${{secrets.PROJECT_NAME}}/${{ secrets.APP_NAME }} .
+
+      - name: Push image
+        run: docker push ${{ secrets.HOST }}:5000/${{secrets.PROJECT_NAME}}/${{ secrets.APP_NAME }}
+
+      - name: Copy docker-compose file to remote
+        run: scp ./docker-compose.yml ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/${{ secrets.APP_NAME }}/
+
+      - name: Restart application
+        run: ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} 'cd ${{secrets.APP_NAME}} && docker-compose pull && docker-compose up -d'
